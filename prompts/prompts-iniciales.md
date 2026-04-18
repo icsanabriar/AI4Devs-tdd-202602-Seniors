@@ -128,3 +128,80 @@ intentionally skipped rather than treated as invalid.
 #### Model: Auto
 
 Based on the last changes under @.cursor/. @prompts-iniciales.md (7-9)
+
+---
+## Prompt - 2026-04-18T18:24:00Z
+### Agent: Agent
+#### Model: Auto
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@backend/src/tests/tests-ics.test.ts` around lines 1 - 40, The test's manual
+jest.mock and prismaMock should follow the repo guidance using
+jest-mock-extended DeepMockProxy: add jest-mock-extended as a devDependency in
+package.json, replace the hand-rolled jest.mock block and the PrismaClient
+instantiation with mockDeep<PrismaClient>(new PrismaClient()) (or
+mockDeep<PrismaClient>()), and type prismaMock as DeepMockProxy<PrismaClient> so
+candidate.create/update/findUnique, education.create/update,
+workExperience.create/update and resume.create are deep-mocked; alternatively,
+if you intend to keep the manual mock, update the project documentation
+(prompts-iniciales.md) to permit this approach and remove the guidance requiring
+jest-mock-extended.
+
+---
+## Prompt - 2026-04-18T18:25:00Z
+### Agent: Agent
+#### Model: Auto
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@backend/src/tests/tests-ics.test.ts` around lines 153 - 167, Tests expect
+malformed or logically invalid education end dates to produce the specific
+message 'Invalid end date' and valid ISO-like endDate strings (e.g.,
+'2022-06-30') to be accepted; update the production validator (the function
+validateCandidateData and any helper that validates educations/dates) to (1)
+parse endDate first and normalize parse errors to throw 'Invalid end date'
+(instead of 'Invalid date'), (2) only reject a truthy endDate if it fails
+parsing or is before the startDate (throwing 'Invalid end date' in both cases),
+and (3) allow well-formed endDate strings like '2022-06-30' through so
+addCandidate and the education happy path succeed.
+
+---
+## Prompt - 2026-04-18T18:30:00Z
+### Agent: Agent
+#### Model: Auto
+
+In `@backend/src/tests/tests-ics.test.ts` at line 451, the happy path covers separate candidate/work/resume writes, but not what happens if a child create fails after the candidate row is created. Add a test that simulates a later delegate rejection and drives transaction/rollback behavior so candidate insertion cannot leave partial records.
+
+---
+## Prompt - 2026-04-18T18:50:00Z
+### Agent: Agent
+#### Model: Auto
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@backend/src/application/services/candidateService.ts` around lines 17 - 46,
+Wrap the prisma.$transaction call with explicit interactive transaction options
+to increase maxWait and timeout (e.g., pass options like { maxWait: 10000,
+timeout: 120000 } as the second argument to prisma.$transaction) so the
+multi-save flow (candidate.save, Education.save, WorkExperience.save,
+Resume.save) has more time; also wrap the transaction invocation in a try/catch
+that inspects Prisma errors and handle Prisma.PrismaClientKnownRequestError
+codes P2002 (unique constraint) and P2028 (transaction already closed/timeout)
+separately, throwing clearer error messages for P2028 instead of rethrowing
+generically.
+
+---
+## Prompt - 2026-04-18T19:00:00Z
+### Agent: Agent
+#### Model: Auto
+
+Verify each finding against the current code and only fix it if needed.
+
+In `@backend/src/domain/models/Resume.ts` around lines 26 - 29, The method
+Resume.create contains a plain console.log(this) that can leak sensitive fields
+like candidateId and file paths; remove that console.log call from the async
+create(executor: PrismaForWrites = prisma) method in Resume.ts and, if you need
+diagnostics, replace it with a structured, non-sensitive log (e.g., log only
+non-identifying fields or a dry-run flag) using the project logger instead of
+console.log to avoid persisting sensitive data.
