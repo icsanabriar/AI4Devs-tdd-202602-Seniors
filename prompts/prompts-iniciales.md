@@ -127,7 +127,7 @@ intentionally skipped rather than treated as invalid.
 ### Agent: Agent
 #### Model: Auto
 
-Based on the last changes under @.cursor/. @prompts-iniciales.md (7-9)
+Based on the last changes under prompts/prompts-iniciales.md (7-9)
 
 ---
 ## Prompt - 2026-04-18T18:24:00Z
