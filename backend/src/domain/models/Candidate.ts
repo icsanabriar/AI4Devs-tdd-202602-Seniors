@@ -1,9 +1,9 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../../infrastructure/prisma';
+import type { PrismaForWrites } from '../../infrastructure/prismaTypes';
 import { Education } from './Education';
 import { WorkExperience } from './WorkExperience';
 import { Resume } from './Resume';
-
-const prisma = new PrismaClient();
 
 export class Candidate {
     id?: number;
@@ -28,7 +28,7 @@ export class Candidate {
         this.resumes = data.resumes || [];
     }
 
-    async save() {
+    async save(executor: PrismaForWrites = prisma) {
         const candidateData: any = {};
 
         // Solo añadir al objeto candidateData los campos que no son undefined
@@ -76,7 +76,7 @@ export class Candidate {
         if (this.id) {
             // Actualizar un candidato existente
             try {
-                return await prisma.candidate.update({
+                return await executor.candidate.update({
                     where: { id: this.id },
                     data: candidateData
                 });
@@ -95,7 +95,7 @@ export class Candidate {
         } else {
             // Crear un nuevo candidato
             try {
-                const result = await prisma.candidate.create({
+                const result = await executor.candidate.create({
                     data: candidateData
                 });
                 return result;

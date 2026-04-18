@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../infrastructure/prisma';
+import type { PrismaForWrites } from '../../infrastructure/prismaTypes';
 
 export class WorkExperience {
     id?: number;
@@ -21,7 +20,7 @@ export class WorkExperience {
         this.candidateId = data.candidateId;
     }
 
-    async save() {
+    async save(executor: PrismaForWrites = prisma) {
         const workExperienceData: any = {
             company: this.company,
             position: this.position,
@@ -36,13 +35,13 @@ export class WorkExperience {
 
         if (this.id) {
             // Actualizar una experiencia laboral existente
-            return await prisma.workExperience.update({
+            return await executor.workExperience.update({
                 where: { id: this.id },
                 data: workExperienceData
             });
         } else {
             // Crear una nueva experiencia laboral
-            return await prisma.workExperience.create({
+            return await executor.workExperience.create({
                 data: workExperienceData
             });
         }

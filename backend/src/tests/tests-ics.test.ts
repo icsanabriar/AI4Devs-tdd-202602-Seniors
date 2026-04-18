@@ -1,43 +1,21 @@
 jest.mock('@prisma/client', () => {
   const actual = jest.requireActual('@prisma/client') as typeof import('@prisma/client');
-  const shared = {
-    candidate: {
-      create: jest.fn(),
-      update: jest.fn(),
-      findUnique: jest.fn(),
-    },
-    education: {
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    workExperience: {
-      create: jest.fn(),
-      update: jest.fn(),
-    },
-    resume: {
-      create: jest.fn(),
-    },
-  };
+  const { prismaMock } = require('./prismaTestMock') as typeof import('./prismaTestMock');
   return {
     ...actual,
-    PrismaClient: jest.fn(() => shared),
+    PrismaClient: jest.fn(() => prismaMock),
   };
 });
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { mockReset } from 'jest-mock-extended';
 import { validateCandidateData } from '../application/validator';
 import { addCandidate } from '../application/services/candidateService';
 import { Candidate } from '../domain/models/Candidate';
 import { Education } from '../domain/models/Education';
 import { WorkExperience } from '../domain/models/WorkExperience';
 import { Resume } from '../domain/models/Resume';
-
-const prismaMock = new PrismaClient() as jest.Mocked<PrismaClient> & {
-  candidate: { create: jest.Mock; update: jest.Mock; findUnique: jest.Mock };
-  education: { create: jest.Mock; update: jest.Mock };
-  workExperience: { create: jest.Mock; update: jest.Mock };
-  resume: { create: jest.Mock };
-};
+import { prismaMock } from './prismaTestMock';
 
 const minimalValid = () => ({
   firstName: 'María',
@@ -46,14 +24,13 @@ const minimalValid = () => ({
 });
 
 beforeEach(() => {
-  prismaMock.candidate.create.mockReset();
-  prismaMock.candidate.update.mockReset();
-  prismaMock.candidate.findUnique.mockReset();
-  prismaMock.education.create.mockReset();
-  prismaMock.education.update.mockReset();
-  prismaMock.workExperience.create.mockReset();
-  prismaMock.workExperience.update.mockReset();
-  prismaMock.resume.create.mockReset();
+  mockReset(prismaMock);
+  prismaMock.$transaction.mockImplementation(
+    (arg: unknown) =>
+      typeof arg === 'function'
+        ? (arg as (tx: typeof prismaMock) => Promise<unknown>)(prismaMock)
+        : Promise.all((arg as Promise<unknown>[]) || []),
+  );
 });
 
 describe('validateCandidateData', () => {
@@ -478,6 +455,32 @@ describe('addCandidate', () => {
 
     expect(prismaMock.workExperience.create).toHaveBeenCalled();
     expect(prismaMock.resume.create).toHaveBeenCalled();
+  });
+
+  test('uses a single transaction so a child write failure cannot leave a persisted candidate (rollback)', async () => {
+    const saved = { id: 3, ...minimalValid(), phone: null, address: null };
+    prismaMock.candidate.create.mockResolvedValue(saved as never);
+    prismaMock.workExperience.create.mockRejectedValue(
+      new Error('delegate failed after candidate insert'),
+    );
+
+    const payload = {
+      ...minimalValid(),
+      workExperiences: [
+        {
+          company: 'ACME',
+          position: 'Engineer',
+          startDate: '2020-01-01',
+        },
+      ],
+    };
+
+    await expect(addCandidate(payload)).rejects.toThrow('delegate failed after candidate insert');
+
+    expect(prismaMock.$transaction).toHaveBeenCalled();
+    expect(prismaMock.candidate.create).toHaveBeenCalled();
+    expect(prismaMock.workExperience.create).toHaveBeenCalled();
+    expect(prismaMock.candidate.delete).not.toHaveBeenCalled();
   });
 
   test('maps Prisma P2002 to email conflict message', async () => {

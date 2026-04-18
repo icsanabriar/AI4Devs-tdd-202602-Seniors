@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../infrastructure/prisma';
+import type { PrismaForWrites } from '../../infrastructure/prismaTypes';
 
 export class Education {
     id?: number;
@@ -19,7 +18,7 @@ export class Education {
         this.candidateId = data.candidateId;
     }
 
-    async save() {
+    async save(executor: PrismaForWrites = prisma) {
         const educationData: any = {
             institution: this.institution,
             title: this.title,
@@ -33,13 +32,13 @@ export class Education {
 
         if (this.id) {
             // Actualizar una experiencia laboral existente
-            return await prisma.education.update({
+            return await executor.education.update({
                 where: { id: this.id },
                 data: educationData
             });
         } else {
             // Crear una nueva experiencia laboral
-            return await prisma.education.create({
+            return await executor.education.create({
                 data: educationData
             });
         }

@@ -3,6 +3,25 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 const PHONE_REGEX = /^(6|7|9)\d{8}$/;
 const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 
+/** YYYY-MM-DD; returns UTC midnight time or null if malformed / invalid calendar day */
+const parseYmdToUtc = (raw: string): number | null => {
+    const s = raw.trim();
+    if (!s || !DATE_REGEX.test(s)) {
+        return null;
+    }
+    const y = parseInt(s.slice(0, 4), 10);
+    const m = parseInt(s.slice(5, 7), 10);
+    const d = parseInt(s.slice(8, 10), 10);
+    if (m < 1 || m > 12 || d < 1 || d > 31) {
+        return null;
+    }
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
+        return null;
+    }
+    return dt.getTime();
+};
+
 //Length validations according to the database schema
 
 const validateName = (name: string) => {
@@ -23,12 +42,6 @@ const validatePhone = (phone: string) => {
     }
 };
 
-const validateDate = (date: string) => {
-    if (!date || !DATE_REGEX.test(date)) {
-        throw new Error('Invalid date');
-    }
-};
-
 const validateAddress = (address: string) => {
     if (address && address.length > 100) {
         throw new Error('Invalid address');
@@ -44,10 +57,20 @@ const validateEducation = (education: any) => {
         throw new Error('Invalid title');
     }
 
-    validateDate(education.startDate);
+    const startT = parseYmdToUtc(String(education.startDate ?? ''));
+    if (startT === null) {
+        throw new Error('Invalid date');
+    }
 
-    if (education.endDate && !DATE_REGEX.test(education.endDate)) {
-        throw new Error('Invalid end date');
+    const endStr = education.endDate != null ? String(education.endDate).trim() : '';
+    if (endStr) {
+        const endT = parseYmdToUtc(endStr);
+        if (endT === null) {
+            throw new Error('Invalid end date');
+        }
+        if (endT < startT) {
+            throw new Error('Invalid end date');
+        }
     }
 };
 
@@ -64,10 +87,20 @@ const validateExperience = (experience: any) => {
         throw new Error('Invalid description');
     }
 
-    validateDate(experience.startDate);
+    const startT = parseYmdToUtc(String(experience.startDate ?? ''));
+    if (startT === null) {
+        throw new Error('Invalid date');
+    }
 
-    if (experience.endDate && !DATE_REGEX.test(experience.endDate)) {
-        throw new Error('Invalid end date');
+    const endStr = experience.endDate != null ? String(experience.endDate).trim() : '';
+    if (endStr) {
+        const endT = parseYmdToUtc(endStr);
+        if (endT === null) {
+            throw new Error('Invalid end date');
+        }
+        if (endT < startT) {
+            throw new Error('Invalid end date');
+        }
     }
 };
 
