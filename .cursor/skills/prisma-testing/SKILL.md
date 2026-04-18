@@ -18,7 +18,7 @@ description: >-
 
 This skill adds **Prisma-specific** discipline on top of general testing hygiene: **never hit a real database in unit tests**; **mock `PrismaClient` with `jest-mock-extended`**; **align with how the repo already wires Prisma** (singleton vs injection).
 
-### In this monorepo (LTI / Prisma in `backend/`)
+## In this monorepo (LTI / Prisma in `backend/`)
 
 - Prisma schema and client generation live under **`backend/prisma/`**; app code imports **`@prisma/client`** from the backend package context.
 - **Jest** for backend: `cd backend && npm test` — align mocks with how **`backend/`** wires **`PrismaClient`** (singleton module vs dependency injection), discovered by reading source.
@@ -61,8 +61,8 @@ Before writing or moving tests, discover how this codebase already works (search
 
 | Layer | Database | Mocking |
 |-------|----------|---------|
-| **Unit tests** | **Do not connect.** Use **`jest-mock-extended`** deep mocks of `PrismaClient` (or of the injected prisma field). |
-| **Integration tests** | **May** use a **real** database **if** the repository already has that pattern **or** the user explicitly asked. Otherwise **do not** silently add DB-backed suites. |
+| **Unit tests** | **Do not connect.** | **`jest-mock-extended`** deep mocks of `PrismaClient` (or of the injected prisma field). |
+| **Integration tests** | **May** use a **real** database **if** the repository already has that pattern **or** the user explicitly asked. Otherwise **do not** silently add DB-backed suites. | **Real DB** when the repo already supports it; otherwise **no** DB-backed suite by default. |
 
 **Unit tests** must **prefer** mocking **Prisma Client** over any real I/O — this matches Prisma’s official unit testing approach.
 

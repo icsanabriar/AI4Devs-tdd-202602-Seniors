@@ -227,7 +227,16 @@ describe('validateCandidateData', () => {
     expect(() => validateCandidateData(data)).toThrow('Invalid description');
   });
 
-  test('rejects invalid CV payload', () => {
+  test('rejects CV when filePath is wrong type (non-empty cv, TEST-009)', () => {
+    const data = {
+      ...minimalValid(),
+      cv: { filePath: 1 },
+    };
+
+    expect(() => validateCandidateData(data)).toThrow('Invalid CV data');
+  });
+
+  test('rejects invalid CV when fileType is wrong type', () => {
     const data = {
       ...minimalValid(),
       cv: { filePath: 'x', fileType: 123 as unknown as string },
@@ -246,7 +255,7 @@ describe('validateCandidateData', () => {
     expect(() => validateCandidateData(data)).not.toThrow();
   });
 
-  test('does not validate CV when cv is empty object', () => {
+  test('skips CV validation when cv is empty object (TEST-009a)', () => {
     const data = {
       ...minimalValid(),
       cv: {},

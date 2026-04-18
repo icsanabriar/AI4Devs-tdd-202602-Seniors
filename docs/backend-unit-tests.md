@@ -174,13 +174,25 @@ Covers `addCandidate` and domain `save`/`create`/`findOne` with **Prisma fully m
 
 - **Type:** Negative
 - **Target Module:** `validator.ts`
-- **Target Public Behavior:** `validateCV` rejects non-objects or missing fields.
+- **Target Public Behavior:** When `cv` is non-empty, `validateCV` rejects wrong types or missing string fields (e.g. non-string `filePath` / `fileType`).
 - **Mocks Required:** none
-- **Arrange:** `cv: {}` or `cv: { filePath: 1 }`.
+- **Arrange:** Non-empty invalid shapes only, e.g. `cv: { filePath: 1 }`, or `cv: { filePath: '/cv.pdf' }` without `fileType`, or `cv: { filePath: '/a', fileType: 2 }` — any case where `Object.keys(cv).length > 0` so the CV branch runs and `validateCV` throws.
 - **Act:** `validateCandidateData`.
 - **Assert:** `Invalid CV data`.
-- **Notes for `backend-test-developer`:** When `cv` is absent or `{}` with `Object.keys(cv).length === 0`, CV validation is skipped per code.
-- **Validation Notes for `backend-test-reviewer`:** Assert skip path for empty cv separately (positive edge).
+- **Notes for `backend-test-developer`:** Do **not** use `cv: {}` here; empty-object skip is **[TEST-009a]**.
+- **Validation Notes for `backend-test-reviewer`:** Confirm negative cases all have at least one CV key so the guard does not skip validation.
+
+### [TEST-009a] Empty `cv` object skips `validateCV` (positive edge)
+
+- **Type:** Positive / Edge Case
+- **Target Module:** `validator.ts`
+- **Target Public Behavior:** `if (data.cv && Object.keys(data.cv).length > 0)` — when `cv` is `{}`, `Object.keys(cv).length === 0`, so `validateCV` is **not** called and `{}` is **not** treated as invalid CV data.
+- **Mocks Required:** none
+- **Arrange:** Otherwise-valid new-candidate payload with `cv: {}` (other required fields satisfied).
+- **Act:** `validateCandidateData`.
+- **Assert:** No throw (CV validation intentionally skipped for empty object).
+- **Notes for `backend-test-developer`:** Separate from **[TEST-009]** so reviewers see empty CV as an explicit skip path, not a negative case.
+- **Validation Notes for `backend-test-reviewer`:** —
 
 ### [TEST-010] When `data.id` is set, validation is skipped
 

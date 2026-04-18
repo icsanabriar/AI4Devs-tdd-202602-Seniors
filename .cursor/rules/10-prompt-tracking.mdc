@@ -32,10 +32,10 @@ Guarantee an **append-only**, **auditable** log of user prompts so course review
 6. **Redaction:** MUST apply **Redaction policy** before writing the body.
 7. **File initialization:** If **`prompts/prompts-iniciales.md`** is missing, MUST create it with exactly this first line, then a blank line:
    `# Prompts log`
-9. **Append semantics:** MUST append exactly **one** new block at the **end** of the file:
+8. **Append semantics:** MUST append exactly **one** new block at the **end** of the file:
    - If there is already content **after** the header line, MUST insert a single line containing only **`---`** immediately **before** the new block.
    - MUST NOT place **`---`** as the first line of the file.
-10. **Append-only:** MUST NOT delete, reorder, or rewrite previous entries; MUST only add to the end.
+9. **Append-only:** MUST NOT delete, reorder, or rewrite previous entries; MUST only add to the end.
 
 ## Model derivation table
 

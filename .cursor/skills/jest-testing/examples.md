@@ -91,7 +91,9 @@ test('the data is peanut butter', async () => {
 Rejecting promises under test:
 
 ```javascript
-await expect(fetchData()).rejects.toThrow('network');
+test('rejects on network failure', async () => {
+  await expect(fetchData()).rejects.toThrow('network');
+});
 ```
 
 Use `expect.assertions(n)` when assertions live in branches Jest might not reach (same doc).

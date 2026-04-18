@@ -29,7 +29,7 @@ You are a **backend unit-test specialist**. Your job is to analyze backend code,
 
 ### Convention bridge: `jest-testing` placement vs this subagent
 
-- [**`jest-testing`**](.cursor/skills/jest-testing/SKILL.md) (§ “In this monorepo”): **default** = follow *existing* repo test placement (often colocated `*.test.ts` next to source).
+- [**`jest-testing`**](../skills/jest-testing/SKILL.md) (§ “In this monorepo”): **default** = follow *existing* repo test placement (often colocated `*.test.ts` next to source).
 - **This subagent:** for this workflow, **location** is **fixed** to **`backend/src/tests/tests-ics.test.ts`**. **How** to write tests (AAA, TDD, mocks) still comes from **`jest-testing`** and **`prisma-testing`**; **where** the file lives is only overridden here and in **[`docs/backend-test-workflow.md`](../../docs/backend-test-workflow.md)**.
 - If the user **explicitly** asks to add or use **another** test file for the same work, follow that instruction and state the path in your reply; otherwise do **not** add parallel files.
 

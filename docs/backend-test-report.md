@@ -2,59 +2,52 @@
 
 ## Objective
 
-Summarize the end-to-end backend unit testing workflow for **candidate insertion** (spec → implement → review).
+Summarize the end-to-end backend unit testing workflow for **candidate insertion** (spec → implement → review), run after recent updates under **`.cursor/`** (agents, skills, rules, commands) and alignment with **`docs/backend-unit-tests.md`** (including **TEST-009** / **TEST-009a** CV cases).
 
 ## Workflow Summary
 
-- **Documentation** (`backend-test-writer`): Inspected `backend/src` for `validateCandidateData`, `addCandidate`, and domain models (`Candidate`, `Education`, `WorkExperience`, `Resume`); produced `docs/backend-unit-tests.md` with two families and TEST-001–018.
-- **Implementation** (`backend-test-developer`): Added `backend/jest.config.js`, implemented `backend/src/tests/tests-ics.test.ts` with shared `@prisma/client` constructor mock (no real DB), AAA-structured cases aligned to the spec plus extra cases to close coverage gaps.
-- **Review** (`backend-test-reviewer`): First coverage gate against `collectCoverageFrom` showed statements/branches below 95%; **one correction cycle** extended tests (nested `Candidate` payloads, validator length limits, optional-field branches, `Resume(null)`, phone/address inclusion, `WorkExperience` endDate branches) until evidence met thresholds.
-- **Final status:** All targeted tests green; coverage for the agreed file scope at **100%** statements, branches, functions, and lines (see Review Summary).
+- **Documentation (`backend-test-writer`):** Confirmed **`docs/backend-unit-tests.md`** exists, stays on-scope for candidate insertion (two families), and includes implementation-ready AAA cases; **TEST-009** (non-empty invalid CV) and **TEST-009a** (empty `cv` skip) are documented.
+- **Implementation (`backend-test-developer`):** Updated **`backend/src/tests/tests-ics.test.ts`** so **TEST-009** is exercised with **`cv: { filePath: 1 }`**, kept a separate assertion for wrong **`fileType`**, and renamed the empty-`cv` test to reference **TEST-009a**; **`PrismaClient`** remains mocked via **`jest.mock('@prisma/client')`** with shared **`prismaMock`** — no real DB.
+- **Review (`backend-test-reviewer`):** Single review pass — all **61** tests passed; coverage from **`cd backend && npm test -- --coverage --coverageReporters=text-summary`** shows **100%** statements, branches, functions, and lines on **`collectCoverageFrom`** scope.
+- **Correction cycles:** None (first review **PASS**).
+- **Final status:** Workflow complete; **PASS**.
 
 ## Agents Invoked
 
-- **backend-test-writer** — Produced [`docs/backend-unit-tests.md`](backend-unit-tests.md) (objective, scope, modules, strategy, two families, detailed AAA cases with Prisma mock notes).
-- **backend-test-developer** — Produced [`backend/src/tests/tests-ics.test.ts`](../backend/src/tests/tests-ics.test.ts) and [`backend/jest.config.js`](../backend/jest.config.js) (`preset: ts-jest`, `collectCoverageFrom` limited to insertion-related sources).
-- **backend-test-reviewer** — Verdict after correction cycle: **PASS** (strict criteria satisfied for this scope); **2** reviewer-equivalent passes (initial metrics → FAIL on coverage → fixes → PASS).
+- **backend-test-writer** — Authoritative spec at [`docs/backend-unit-tests.md`](backend-unit-tests.md) (verified; no spec rewrite required this run).
+- **backend-test-developer** — Implementation in [`backend/src/tests/tests-ics.test.ts`](../backend/src/tests/tests-ics.test.ts) (incremental alignment with **TEST-009** / **TEST-009a**).
+- **backend-test-reviewer** — Verdict **PASS** (one iteration).
 
 ## Artifacts Generated
 
 - `docs/backend-unit-tests.md`
 - `backend/src/tests/tests-ics.test.ts`
-- `backend/jest.config.js`
 - `docs/backend-test-report.md` (this file)
 
 ## Functional Scope Covered
 
-- **Reception of form data** — Matches spec: required/optional fields, email/phone/address rules, nested `educations` / `workExperiences`, CV validation, `data.id` short-circuit, positive/negative/edge cases on `validateCandidateData`; `addCandidate` validation path and no-Prisma-on-invalid-input.
-- **Saving data into the database** — Matches spec: mocked `PrismaClient` for `candidate.create`/`update`, `education`/`workExperience`/`resume` creates, `P2002` mapping in `addCandidate`, `Candidate.save` create/update error mapping, `findOne`, nested relation payload on `Candidate`, related model save branches.
+- **Reception of form data** — **`validateCandidateData`** rules (names, email, phone, address, educations, work experiences, CV including empty-object skip and invalid non-empty CV), **`data.id`** short-circuit.
+- **Saving data into the database** — **`addCandidate`**, **`Candidate` / `Education` / `WorkExperience` / `Resume`** save paths with **Prisma** methods **`jest.fn()`**’d; **P2002** / init / **P2025** / generic error paths covered per existing suite.
 
 ## Implementation Summary
 
-- **Families:** Validator-focused tests (`describe('validateCandidateData')`), service orchestration (`addCandidate`), and domain persistence units (`Candidate`, `Education`, `WorkExperience`, `Resume`).
-- **Mocking:** Single shared mock object returned by mocked `PrismaClient` constructor (`jest.mock('@prisma/client', () => ({ ...actual, PrismaClient: jest.fn(() => shared) }))`), `mockReset` per test in `beforeEach` on delegates; aligns with **singleton-per-module** Prisma usage in domain files without opening a real database.
-- **Helpers:** `minimalValid()` factory for payloads; `Prisma.PrismaClientInitializationError` from actual Prisma for `instanceof` checks.
+- **Families:** Validator + service + domain models on the insert path.
+- **Mocking:** Constructor mock for **`@prisma/client`** returning a shared object; **`beforeEach`** **`mockReset`** on used delegates.
+- **Notable change this run:** Explicit **`cv: { filePath: 1 }`** negative case and **TEST-009a**-labeled empty **`cv: {}`** skip test for spec traceability.
 
 ## Review Summary
 
-- **PASS** or **FAIL** (last reviewer verdict): **PASS**
-- **Coverage** — With `cd backend && npm test -- --coverage --coverageReporters=text-summary --coverageReporters=json` and `collectCoverageFrom` as in `jest.config.js`:
-  - **Statements:** 100% (220/220)
-  - **Branches:** 100% (113/113)
-  - **Functions:** 100% (28/28)
-  - **Lines:** 100% (187/187)
-- **Positive / negative / edge** assessment: Adequate for the covered modules — happy paths, validation failures, Prisma/unique errors, optional fields, short-circuit validation with `id`, nullish `Resume` input, omission vs inclusion of scalar fields on `Candidate`.
-- **Prisma/database mocking** assessment: **Safe** for this suite — no assertions that real `DATABASE_URL` is used; persistence is entirely `jest.fn()` delegates on the shared mock.
-- **Main quality findings:** Tests are behavior-oriented with explicit Arrange/Act/Assert; production `console.log` in `Candidate`/`Resume` still emits noise during runs (pre-existing code, not introduced by tests). Optional: extract Prisma to one injectable module for simpler DI-style tests in future refactors.
+- **PASS** or **FAIL:** **PASS** (last reviewer verdict).
+- **Coverage** — statements **100%** (220/220), branches **100%** (113/113), functions **100%** (28/28), lines **100%** (187/187). Evidence: `cd backend && npm test -- --coverage --coverageReporters=text-summary` (Jest text summary, 2026-04-18 run).
+- **Positive / negative / edge:** Present across validator, **`addCandidate`**, and domain **`save`** / **`findOne`** flows; CV negative vs empty-object edge split matches spec.
+- **Prisma/database mocking:** No real **`DATABASE_URL`** usage in tests; persistence is entirely mocked.
+- **Main quality findings:** Production code emits **`console.log`** in some error/success paths (noise in test output only; not a test failure).
 
 ## Risks or Gaps
 
-- **Scope:** Coverage thresholds apply only to `collectCoverageFrom` files in `jest.config.js` — not `index.ts`, routes, or controller HTTP wiring; HTTP-level behavior is **not** unit-tested here.
-- **Spec vs tests:** Implementation includes additional scenarios (e.g. explicit `WorkExperience`/`Education` constructor branch tests, `Resume(null)`) beyond TEST-018; they remain on-scope for candidate insertion and safety.
-- **Snyk:** Automated `snyk_code_scan` was not run (tooling not available in this session); changes are test-only plus Jest config, no new runtime dependencies.
+- **Console noise** from **`Resume`** / **`Candidate`** **`console.log`** during tests — optional cleanup in production code or **`jest.spyOn(console, 'log')`** if CI log hygiene matters.
+- **Scope:** Coverage metrics apply to **`jest.config.js`** **`collectCoverageFrom`** list only, not the whole Express app (intentional).
 
 ## Final Verdict
 
 **PASS**
-
-Review **PASS** with evidence for all four coverage metrics on the agreed scope, Prisma mocked for persistence, no material unresolved gaps for the documented insertion pipeline.
