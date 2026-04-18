@@ -1,5 +1,5 @@
 ---
-description: Conventions for backend unit tests in this monorepo (single consolidated file).
+description: Conventions for backend unit tests in this monorepo (single consolidated file). Paired with docs/backend-test-workflow.md.
 globs:
   - backend/src/tests/**
 alwaysApply: false
