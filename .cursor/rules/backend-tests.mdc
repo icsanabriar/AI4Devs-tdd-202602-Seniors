@@ -1,0 +1,15 @@
+---
+description: Conventions for backend unit tests in this monorepo (single consolidated file).
+globs:
+  - backend/src/tests/**
+alwaysApply: false
+---
+
+# Backend tests (LTI / this repository)
+
+When editing files under **`backend/src/tests/`**:
+
+- **Canonical unit-test file** for the **`backend-test-developer`** / orchestrator workflow: **`backend/src/tests/tests-ics.test.ts`**. Prefer **adding or refactoring tests inside this file** rather than new scattered files unless the user **explicitly** requests otherwise.
+- **Style and safety** (AAA, Jest, Prisma mocking, no real DB in unit tests): follow **[`jest-testing`](../skills/jest-testing/SKILL.md)** and **[`prisma-testing`](../skills/prisma-testing/SKILL.md)**; **placement** for that workflow follows **[`backend-test-developer`](../agents/backend-test-developer.md)** and **[`docs/backend-test-workflow.md`](../../docs/backend-test-workflow.md)**.
+
+If you are unsure which workflow applies, open **`docs/backend-test-workflow.md`** before splitting or colocating new test files.
